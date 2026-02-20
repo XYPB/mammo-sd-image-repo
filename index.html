@@ -371,8 +371,13 @@
     <p>
       You will be shown <strong id="totalCountIntro">0</strong> mammogram images one at a time.
       For each image, decide whether it looks <strong>Real</strong> or <strong>Synthetic</strong> (AI-generated).
+      You may consider the overall texture, noise patterns, anatomical structures, and any subtle artifacts that may indicate synthetic generation.
     </p>
     <p>
+      We removed all the text labels and identifying information from the images to ensure a fair evaluation based solely on mammogram visual cues.
+    </p>
+    <p>
+      The images may take a few moments to load, so please be patient. Click on the image to view a larger version if needed.
       You can navigate back and change your answers at any time.
       Results will only be revealed after you have answered every question and confirmed your submission.
     </p>
@@ -431,7 +436,8 @@
 
 <script>
 // ========== Configuration ==========
-const N = 10; // Number of images to show per folder (set to Infinity to show all)
+const N = 20; // Number of images to show per folder (set to Infinity to show all)
+const GITHUB_BASE = "https://raw.githubusercontent.com/XYPB/mammo-sd-image-repo/master/";
 
 // ========== Image data ==========
 const folders = {
@@ -620,7 +626,7 @@ for (const [folder, files] of Object.entries(folders)) {
   shuffle(pool);
   const sampled = pool.slice(0, Math.min(N, pool.length));
   for (const file of sampled) {
-    items.push({ folder, file, path: encodeURI(folder + "/" + file), answer: null });
+    items.push({ folder, file, path: GITHUB_BASE + encodeURI(folder + "/" + file), answer: null });
   }
 }
 shuffle(items);
