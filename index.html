@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Turing Test — Image Realism Study</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --green: #16a34a;
+    --green-hover: #15803d;
+    --red: #dc2626;
+    --red-hover: #b91c1c;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .container {
+    max-width: 820px;
+    width: 100%;
+    padding: 2rem 1.5rem 6rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  /* ---------- Intro screen ---------- */
+  #intro {
+    text-align: center;
+    margin-top: 3rem;
+  }
+  #intro p {
+    max-width: 560px;
+    margin: 0 auto 1.5rem;
+    line-height: 1.65;
+    color: var(--text);
+    font-size: 1.05rem;
+  }
+
+  /* ---------- Quiz ---------- */
+  #quiz { display: none; }
+
+  .question-counter {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .image-wrapper {
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 512px;
+    height: 512px;
+    margin: 0 auto 1.25rem;
+    cursor: zoom-in;
+  }
+  .image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .btn {
+    padding: 0.65rem 2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    color: #fff;
+    min-width: 160px;
+    text-align: center;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-real { background: var(--green); }
+  .btn-real:hover { background: var(--green-hover); }
+  .btn-real.selected { box-shadow: 0 0 0 3px rgba(22,163,74,0.45); }
+  .btn-real.dimmed { background: #94a3b8; }
+
+  .btn-synthetic { background: var(--red); }
+  .btn-synthetic:hover { background: var(--red-hover); }
+  .btn-synthetic.selected { box-shadow: 0 0 0 3px rgba(220,38,38,0.45); }
+  .btn-synthetic.dimmed { background: #94a3b8; }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-nav {
+    padding: 0.5rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+  .btn-nav:hover { background: #f1f5f9; }
+  .btn-nav:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-finish {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-finish:hover { background: var(--primary-hover); }
+  .btn-finish:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-start {
+    padding: 0.75rem 2.5rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-start:hover { background: var(--primary-hover); }
+
+  /* ---------- Progress bar ---------- */
+  .progress-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: none;
+    z-index: 100;
+  }
+  .progress-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    text-align: center;
+  }
+  .progress-track {
+    width: 100%;
+    max-width: 600px;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* ---------- Results ---------- */
+  #results { display: none; }
+
+  .results-title {
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .results-subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .result-card .label {
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .result-card .count {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .result-card .pct {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .bar-bg {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+  .bar-fg {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 99px;
+    transition: width 0.6s ease;
+  }
+
+  .answered-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .answered-dot.done { background: var(--primary); }
+
+  /* ---------- Confirm overlay ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+  }
+  .overlay.active { display: flex; }
+  .overlay-box {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+  .overlay-box p { margin-bottom: 1.25rem; line-height: 1.5; }
+  .overlay-btns { display: flex; gap: 0.75rem; justify-content: center; }
+  .overlay-btns .btn-nav { min-width: 100px; }
+
+  .restart-row { text-align: center; margin-top: 2rem; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 180px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    display: none;
+    flex-direction: column;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+  }
+  .sidebar-header {
+    padding: 1rem 0.75rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+  .sidebar-item {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-item:hover { background: #f1f5f9; }
+  .sidebar-item.active { background: #e0e7ff; color: var(--primary); font-weight: 600; }
+
+  /* ---------- Lightbox ---------- */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 300;
+    cursor: zoom-out;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebarHeader">Remaining</div>
+  <div class="sidebar-list" id="sidebarList"></div>
+</div>
+<div class="container">
+  <h1>Visual Turing Test</h1>
+  <p class="subtitle">Mammogram Image Realism Study</p>
+
+  <!-- Intro -->
+  <div id="intro">
+    <p>
+      You will be shown <strong id="totalCountIntro">0</strong> mammogram images one at a time.
+      For each image, decide whether it looks <strong>Real</strong> or <strong>Synthetic</strong> (AI-generated).
+    </p>
+    <p>
+      You can navigate back and change your answers at any time.
+      Results will only be revealed after you have answered every question and confirmed your submission.
+    </p>
+    <button class="btn-start" onclick="startQuiz()">Begin</button>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz">
+    <div class="question-counter" id="counter">Image 1 / 120</div>
+    <div class="image-wrapper" onclick="openLightbox()">
+      <img id="quizImg" src="" alt="Mammogram image">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-real" id="btnReal" onclick="answer('real')">Real</button>
+      <button class="btn btn-synthetic" id="btnSynth" onclick="answer('synthetic')">Synthetic</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-nav" id="btnPrev" onclick="navigate(-1)">&larr; Previous</button>
+      <button class="btn-finish" id="btnFinish" onclick="tryFinish()" disabled>Finish</button>
+      <button class="btn-nav" id="btnNext" onclick="navigate(1)">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-title">Results</div>
+    <p class="results-subtitle">Percentage of images classified as <em>Real</em> by the user</p>
+    <div id="resultCards"></div>
+    <div class="restart-row">
+      <button class="btn-start" onclick="location.reload()">Restart</button>
+    </div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="progress-container" id="progressBar">
+  <div class="progress-label" id="progressLabel">0 / 0 answered</div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Zoomed mammogram">
+</div>
+
+<!-- Confirm overlay -->
+<div class="overlay" id="confirmOverlay">
+  <div class="overlay-box">
+    <p><strong>Submit your answers?</strong><br>You will not be able to change them after confirmation.</p>
+    <div class="overlay-btns">
+      <button class="btn-nav" onclick="closeOverlay()">Go back</button>
+      <button class="btn-finish" onclick="showResults()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== Configuration ==========
+const N = 10; // Number of images to show per folder (set to Infinity to show all)
+
+// ========== Image data ==========
+const folders = {
+  "csaw_orig": [
+    "00180_20990909_R_CC_1_resized.png",
+    "00180_20990909_R_MLO_1_resized.png",
+    "00252_20990909_L_CC_1_resized.png",
+    "00252_20990909_L_MLO_1_resized.png",
+    "00252_20990909_R_CC_3_resized.png",
+    "00252_20990909_R_MLO_3_resized.png",
+    "00815_20990909_L_CC_3_resized.png",
+    "00815_20990909_L_MLO_3_resized.png",
+    "00875_20990909_R_CC_1_resized.png",
+    "00875_20990909_R_MLO_1_resized.png",
+    "00941_20990909_R_CC_2_resized.png",
+    "00941_20990909_R_MLO_2_resized.png",
+    "01032_20990909_L_CC_1_resized.png",
+    "01032_20990909_L_MLO_1_resized.png",
+    "01304_20990909_R_CC_2_resized.png",
+    "01304_20990909_R_MLO_2_resized.png",
+    "02217_20990909_R_CC_3_resized.png",
+    "02217_20990909_R_MLO_3_resized.png",
+    "02429_20990909_R_CC_3_resized.png",
+    "02429_20990909_R_MLO_3_resized.png",
+    "02694_20990909_L_CC_5_resized.png",
+    "02694_20990909_L_MLO_5_resized.png",
+    "04252_20990909_R_CC_2_resized.png",
+    "04252_20990909_R_MLO_2_resized.png",
+    "05331_20990909_L_CC_4_resized.png",
+    "05331_20990909_L_MLO_4_resized.png",
+    "05902_20990909_R_CC_1_resized.png",
+    "05902_20990909_R_MLO_1_resized.png",
+    "06423_20990909_R_CC_4_resized.png",
+    "06423_20990909_R_MLO_4_resized.png",
+    "06906_20990909_L_CC_3_resized.png",
+    "06906_20990909_L_MLO_3_resized.png",
+    "07500_20990909_L_CC_1_resized.png",
+    "07500_20990909_L_MLO_1_resized.png",
+    "07540_20990909_L_CC_4_resized.png",
+    "07540_20990909_L_MLO_4_resized.png",
+    "07540_20990909_R_CC_3_resized.png",
+    "07540_20990909_R_MLO_3_resized.png",
+    "09295_20990909_L_CC_3_resized.png",
+    "09295_20990909_L_MLO_3_resized.png"
+  ],
+  "mammo-rgb": [
+    "img_105_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_105_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_124_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_124_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_283_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_283_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_300_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_300_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_302_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_302_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_314_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_314_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_356_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_356_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_487_view1_Two_left_side_breast_mammograms_with_malignant_can.jpg",
+    "img_487_view2_Two_left_side_breast_mammograms_with_malignant_can.jpg",
+    "img_513_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_513_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_566_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_566_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_602_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_602_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_617_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_617_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_643_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_643_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_655_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_655_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_69_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_69_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_747_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_747_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_760_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_760_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_7_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_7_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_846_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_846_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_901_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_901_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg"
+  ],
+  "ours": [
+    "img_18_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_18_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_243_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_243_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_247_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_247_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_299_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_299_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_356_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_356_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_370_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_370_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_40_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_40_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_450_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_450_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_48_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_48_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_523_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_523_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_595_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_595_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_609_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_609_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_657_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_657_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_743_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_743_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_773_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_773_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_803_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_803_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_844_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_844_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_865_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_865_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_950_view1_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_950_view2_Two_healthy_left_breast_mammograms,_the_first_imag.jpg",
+    "img_998_view1_Two_healthy_right_breast_mammograms,_the_first_ima.jpg",
+    "img_998_view2_Two_healthy_right_breast_mammograms,_the_first_ima.jpg"
+  ],
+  "ca3d": [
+    "00668_R_CC.png",
+    "00668_R_MLO.png",
+    "00888_L_CC.png",
+    "00888_L_MLO.png",
+    "00909_L_CC.png",
+    "00909_L_MLO.png",
+    "02761_R_CC.png",
+    "02761_R_MLO.png",
+    "03046_R_CC.png",
+    "03046_R_MLO.png",
+    "03259_R_CC.png",
+    "03259_R_MLO.png",
+    "03499_R_CC.png",
+    "03499_R_MLO.png",
+    "04540_R_CC.png",
+    "04540_R_MLO.png",
+    "06080_R_CC.png",
+    "06080_R_MLO.png",
+    "06508_R_CC.png",
+    "06508_R_MLO.png",
+    "06854_R_CC.png",
+    "06854_R_MLO.png",
+    "08809_R_CC.png",
+    "08809_R_MLO.png",
+    "09651_L_CC.png",
+    "09651_L_MLO.png",
+    "09837_L_CC.png",
+    "09837_L_MLO.png",
+    "09999_L_CC.png",
+    "09999_L_MLO.png",
+    "10170_L_CC.png",
+    "10170_L_MLO.png",
+    "10452_L_CC.png",
+    "10452_L_MLO.png",
+    "10458_R_CC.png",
+    "10458_R_MLO.png",
+    "10463_L_CC.png",
+    "10463_L_MLO.png",
+    "11081_R_CC.png",
+    "11081_R_MLO.png"
+  ]
+};
+
+// Fisher-Yates shuffle
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ========== Build & shuffle ==========
+let items = [];
+for (const [folder, files] of Object.entries(folders)) {
+  const pool = [...files];
+  shuffle(pool);
+  const sampled = pool.slice(0, Math.min(N, pool.length));
+  for (const file of sampled) {
+    items.push({ folder, file, path: encodeURI(folder + "/" + file), answer: null });
+  }
+}
+shuffle(items);
+
+const total = items.length;
+let idx = 0;
+
+document.getElementById("totalCountIntro").textContent = total;
+
+// ========== Quiz logic ==========
+function startQuiz() {
+  document.getElementById("intro").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+  document.getElementById("progressBar").style.display = "block";
+  document.getElementById("sidebar").style.display = "flex";
+  render();
+}
+
+function render() {
+  const item = items[idx];
+  document.getElementById("counter").textContent = `Image ${idx + 1} / ${total}`;
+  document.getElementById("quizImg").src = item.path;
+
+  // Highlight selected button, dim the other
+  const btnReal = document.getElementById("btnReal");
+  const btnSynth = document.getElementById("btnSynth");
+  btnReal.classList.toggle("selected", item.answer === "real");
+  btnReal.classList.toggle("dimmed", item.answer === "synthetic");
+  btnSynth.classList.toggle("selected", item.answer === "synthetic");
+  btnSynth.classList.toggle("dimmed", item.answer === "real");
+
+  // Navigation
+  document.getElementById("btnPrev").disabled = idx === 0;
+  document.getElementById("btnNext").disabled = idx === total - 1;
+
+  // Finish button
+  const answeredCount = items.filter(i => i.answer !== null).length;
+  document.getElementById("btnFinish").disabled = answeredCount < total;
+
+  // Progress
+  document.getElementById("progressLabel").textContent = `${answeredCount} / ${total} answered`;
+  document.getElementById("progressFill").style.width = `${(answeredCount / total) * 100}%`;
+
+  // Sidebar — show only unanswered questions
+  const list = document.getElementById("sidebarList");
+  list.innerHTML = "";
+  const unanswered = items.map((it, i) => ({ i, it })).filter(o => o.it.answer === null);
+  document.getElementById("sidebarHeader").textContent = `Remaining (${unanswered.length})`;
+  for (const { i } of unanswered) {
+    const el = document.createElement("div");
+    el.className = "sidebar-item" + (i === idx ? " active" : "");
+    el.textContent = `#${i + 1}`;
+    el.onclick = () => { idx = i; render(); };
+    list.appendChild(el);
+  }
+}
+
+function answer(choice) {
+  items[idx].answer = choice;
+  render();
+  // Auto-advance after short delay if not last
+  if (idx < total - 1) {
+    setTimeout(() => { idx++; render(); }, 250);
+  }
+}
+
+function navigate(dir) {
+  idx = Math.max(0, Math.min(total - 1, idx + dir));
+  render();
+}
+
+function tryFinish() {
+  document.getElementById("confirmOverlay").classList.add("active");
+}
+
+function closeOverlay() {
+  document.getElementById("confirmOverlay").classList.remove("active");
+}
+
+function openLightbox() {
+  const lb = document.getElementById("lightbox");
+  document.getElementById("lightboxImg").src = items[idx].path;
+  lb.classList.add("active");
+}
+
+function closeLightbox() {
+  document.getElementById("lightbox").classList.remove("active");
+}
+
+// ========== Results ==========
+const folderLabels = {
+  "csaw_orig": "CSAW (Original)",
+  "mammo-rgb": "Mammo-RGB",
+  "ours": "Ours",
+  "ca3d": "CA3D"
+};
+
+function showResults() {
+  closeOverlay();
+  document.getElementById("quiz").style.display = "none";
+  document.getElementById("progressBar").style.display = "none";
+  document.getElementById("sidebar").style.display = "none";
+  document.getElementById("results").style.display = "block";
+
+  const stats = {};
+  for (const key of Object.keys(folders)) {
+    stats[key] = { total: 0, real: 0 };
+  }
+  for (const item of items) {
+    stats[item.folder].total++;
+    if (item.answer === "real") stats[item.folder].real++;
+  }
+
+  const container = document.getElementById("resultCards");
+  container.innerHTML = "";
+
+  for (const key of Object.keys(folders)) {
+    const s = stats[key];
+    const pct = s.total > 0 ? ((s.real / s.total) * 100).toFixed(1) : 0;
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <div style="flex:1">
+        <div class="label">${folderLabels[key] || key}</div>
+        <div class="count">${s.real} of ${s.total} classified as Real</div>
+        <div class="bar-bg"><div class="bar-fg" style="width:0%"></div></div>
+      </div>
+      <div class="pct" style="margin-left:1.5rem">${pct}%</div>
+    `;
+    container.appendChild(card);
+    // Animate bar
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.querySelector(".bar-fg").style.width = pct + "%";
+      });
+    });
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", e => {
+  if (document.getElementById("quiz").style.display === "none") return;
+  if (document.getElementById("lightbox").classList.contains("active")) {
+    if (e.key === "Escape") closeLightbox();
+    return;
+  }
+  if (document.getElementById("confirmOverlay").classList.contains("active")) {
+    if (e.key === "Escape") closeOverlay();
+    if (e.key === "Enter") showResults();
+    return;
+  }
+  if (e.key === "ArrowLeft") navigate(-1);
+  if (e.key === "ArrowRight") navigate(1);
+  if (e.key === "1" || e.key === "r") answer("real");
+  if (e.key === "2" || e.key === "s") answer("synthetic");
+});
+</script>
+
+</body>
+</html>
