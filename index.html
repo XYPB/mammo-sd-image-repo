@@ -437,7 +437,6 @@
 <script>
 // ========== Configuration ==========
 const N = 20; // Number of images to show per folder (set to Infinity to show all)
-const GITHUB_BASE = "https://raw.githubusercontent.com/XYPB/mammo-sd-image-repo/master/";
 
 // ========== Image data ==========
 const folders = {
@@ -626,7 +625,7 @@ for (const [folder, files] of Object.entries(folders)) {
   shuffle(pool);
   const sampled = pool.slice(0, Math.min(N, pool.length));
   for (const file of sampled) {
-    items.push({ folder, file, path: GITHUB_BASE + encodeURI(folder + "/" + file), answer: null });
+    items.push({ folder, file, path: encodeURI(folder + "/" + file), answer: null });
   }
 }
 shuffle(items);

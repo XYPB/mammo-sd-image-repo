@@ -469,7 +469,6 @@
 <script>
 // ========== Configuration ==========
 const N = 20; // Number of pairs to show per folder (set to Infinity to show all)
-const GITHUB_BASE = "https://raw.githubusercontent.com/XYPB/mammo-sd-image-repo/master/";
 
 // ========== Image data ==========
 const folders = {
@@ -687,8 +686,8 @@ for (const [folder, files] of Object.entries(folders)) {
         folder,
         fileA: group[0],
         fileB: group[1],
-        pathA: GITHUB_BASE + encodeURI(folder + "/" + group[0]),
-        pathB: GITHUB_BASE + encodeURI(folder + "/" + group[1]),
+        pathA: encodeURI(folder + "/" + group[0]),
+        pathB: encodeURI(folder + "/" + group[1]),
         labelA: viewLabel(folder, group[0], 0),
         labelB: viewLabel(folder, group[1], 1),
         answer: null
