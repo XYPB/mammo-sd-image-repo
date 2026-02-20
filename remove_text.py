@@ -45,8 +45,9 @@ def remove_text_label(image):
 if __name__ == "__main__":
     # image_folder = "./csaw_orig"
     # image_folder = "./mammo-rgb"
+    image_folder = "./mammo-rgb-bak"
     # image_folder = "./ours"
-    image_folder = "./ca3d_bak"
+    # image_folder = "./ca3d_bak"
     images = glob(f"{image_folder}/*.jpg") + glob(f"{image_folder}/*.png")  # Adjust the extension if needed
     for image_path in tqdm(images):
         image = Image.open(image_path)
