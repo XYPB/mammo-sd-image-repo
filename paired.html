@@ -364,8 +364,8 @@
   }
   .lightbox.active { display: flex; }
   .lightbox img {
-    max-width: 90vw;
-    max-height: 90vh;
+    width: min(90vw, 90vh);
+    height: min(90vw, 90vh);
     object-fit: contain;
     border-radius: 6px;
     box-shadow: 0 0 40px rgba(0,0,0,0.5);
